@@ -1,4 +1,4 @@
-from main import VideoDownloader
+from downloader import MediaDownloader
 import os
 import time
 import pickle
@@ -47,7 +47,7 @@ class ImageDownloaderApp(TkinterDnD.Tk):
         # Initialize the settings
         self.settings_file = "settings.ini"
         self.settings = self.load_settings()
-        self.downloader = VideoDownloader()
+        self.downloader = MediaDownloader()
 
         self.title("Image Downloader")
         self.geometry("830x500")  # Set a fixed window size
