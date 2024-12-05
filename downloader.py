@@ -1,12 +1,10 @@
 import requests, time
-import tkinter as tk
-from tkinter import messagebox
 import threading
 import yt_dlp as ydl
 import os
 import requests
 
-class VideoDownloader:
+class MediaDownloader:
     def __init__(self):
         self.video_formats = {}
 
@@ -255,119 +253,3 @@ class VideoDownloader:
         
         return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
 
-# Tkinter Application class follows...
-
-class VideoDownloaderApp:
-    def __init__(self, root):
-        self.root = root
-        self.downloader = VideoDownloader()  # Create an instance of the yt-dlp-based downloader
-
-        # Set up GUI elements
-        self.status_var = tk.StringVar(value="Ready")
-        self.resolution_buttons = []
-        self.is_audio = False  # To toggle between audio and video download mode
-
-        self.create_widgets()
-
-    def handle_ctrl_a(self, event):
-        # Select all text in the Entry widget
-        widget = event.widget  # The widget that triggered the event
-        if isinstance(widget, tk.Entry):
-            widget.select_range(0, tk.END)  # Select all text
-            widget.icursor(tk.END)  # Place the cursor at the end
-        return 'break'  # Prevent default behavior
-
-    def create_widgets(self):
-        """Create and arrange the GUI widgets."""
-        self.status_label = tk.Label(self.root, textvariable=self.status_var)
-        self.status_label.pack(pady=5)
-
-        self.resolution_frame = tk.Frame(self.root)
-        self.resolution_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
-        # Entry field for video links
-        tk.Label(self.root, text="Enter Video Links:").pack(pady=5)
-        self.entry_links = tk.Entry(self.root, width=50)
-        self.entry_links.pack(pady=5)
-
-        # Bind Ctrl+A to the custom handler
-        self.entry_links.bind("<Control-a>", self.handle_ctrl_a)
-
-        # Submit button
-        submit_button = tk.Button(self.root, text="Submit", command=self.process_links)
-        submit_button.pack(pady=10)
-
-        # Toggle button for audio or video download
-        self.toggle_audio_button = tk.Button(self.root, text="Switch to Audio Download", command=self.toggle_audio_mode)
-        self.toggle_audio_button.pack(pady=5)
-
-    def process_links(self):
-        """Process input links and generate resolution buttons if video mode is selected."""
-        links = self.entry_links.get().split("https://")[1:]  # Extract valid links
-        links = ['https://' + link for link in links]  # Rebuild links
-
-        if not links:
-            messagebox.showerror("Error", "No valid links provided")
-            return
-
-        # Clear existing resolution buttons
-        for btn in self.resolution_buttons:
-            btn.destroy()
-        self.resolution_buttons.clear()
-
-        if self.is_audio:
-            # Audio download mode
-            for link in links:
-                button = tk.Button(
-                    self.resolution_frame, 
-                    text=f"Download Audio from {link}",
-                    command=lambda l=link: self.start_audio_download(l)
-                )
-                button.pack(fill=tk.X, pady=2)
-                self.resolution_buttons.append(button)
-        else:
-            # Video download mode with resolutions
-            for link in links:
-                try:
-                    resolutions = self.downloader.get_video_formats(link)
-
-                    for resolution, size, format_id in resolutions:
-                        size_text = f"{size} MB" if size else "Unknown Size"
-                        btn_text = f"{resolution} - {size_text}"
-                        button = tk.Button(
-                            self.resolution_frame, 
-                            text=btn_text,
-                            command=lambda l=link, f_id=format_id: self.start_video_download(l, f_id)
-                        )
-                        button.pack(fill=tk.X, pady=2)
-                        self.resolution_buttons.append(button)
-                except ValueError as e:
-                    messagebox.showerror("Error", str(e))
-
-    def start_video_download(self, link, format_id):
-        """Start downloading the video in a separate thread.""" 
-        thread = threading.Thread(target=self.downloader.download_video, args=(link, format_id, self.update_status))
-        thread.start()
-
-    def start_audio_download(self, link):
-        """Start downloading audio in a separate thread."""
-        thread = threading.Thread(target=self.downloader.download_audio, args=(link, self.update_status))
-        thread.start()
-
-    def update_status(self, message):
-        """Update the status bar with the given message.""" 
-        self.status_var.set(message)
-        self.root.update()
-
-    def toggle_audio_mode(self):
-        """Toggle between audio and video download modes."""
-        self.is_audio = not self.is_audio
-        mode = "Audio" if self.is_audio else "Video"
-        self.toggle_audio_button.config(text=f"Switch to {mode} Download")
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("Video and Music Downloader")
-    app = VideoDownloaderApp(root)
-    root.mainloop()
